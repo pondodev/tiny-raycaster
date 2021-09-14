@@ -8,6 +8,7 @@ use std::io::Write;
 use std::path::Path;
 use map::*;
 use player::*;
+use std::f32::consts::PI;
 
 const WINDOW_WIDTH: usize = 512;
 const WINDOW_HEIGHT: usize = 512;
@@ -16,28 +17,37 @@ const FRAMEBUFFER_SIZE: usize = WINDOW_WIDTH * WINDOW_HEIGHT;
 fn main() {
     // colours stored as hex RGBA
     let mut framebuffer: [ u32; FRAMEBUFFER_SIZE ]
-        = [ 0x00000000; FRAMEBUFFER_SIZE ];
-
-    // temp pretty colour background to show coordinate space
-    for y in 0..WINDOW_HEIGHT {
-        for x in 0..WINDOW_WIDTH {
-            let r = (255 * x / WINDOW_WIDTH) as u8;
-            let g = (255 * y / WINDOW_HEIGHT) as u8;
-            let b = 0;
-            let a = 255;
-
-            framebuffer[ x + y * WINDOW_WIDTH ] = encode_color(r, g, b, a)
-        }
-    }
+        = [ 0xFFFFFFFF; FRAMEBUFFER_SIZE ];
 
     let map = GameMap::new( "map.txt" );
     draw_tiles(&mut framebuffer, &map);
 
     let tile_width = WINDOW_WIDTH / map.width;
     let tile_height = WINDOW_HEIGHT / map.height;
-    let player = Player::new( 2.0, 7.0, 5 );
+    let player = Player::new( 2.0, 7.0, 5, 0.5 );
     let (x, y) = player.get_world_pos( tile_width, tile_height );
-    draw_rect( &mut framebuffer, x, y, player.size, player.size, 0xFF00FFFF );
+    draw_rect( &mut framebuffer, x, y, player.size, player.size, 0x5555FFFF );
+
+    // draw view cone
+    let fov = PI / 3.0;
+    for i in 0..WINDOW_WIDTH {
+        let angle = player.angle - fov / 2.0 + fov * i as f32 / WINDOW_WIDTH as f32;
+
+        let mut ray_dist = 0.0;
+        let draw_dist = 20.0;
+        while ray_dist < draw_dist {
+            let x = player.x + ray_dist * angle.cos();
+            let y = player.y + ray_dist * angle.sin();
+            if map.tiles[ x as usize + y as usize * map.width ] != Tile::Floor {
+                break
+            }
+
+            let x = x * tile_width as f32;
+            let y = y * tile_height as f32;
+            draw_rect( &mut framebuffer, x as usize, y as usize, 1, 1, 0xFF000000 );
+            ray_dist += 0.05;
+        }
+    }
 
     buffer_to_image( &framebuffer );
 }
@@ -91,7 +101,7 @@ fn draw_tiles( buffer: &mut [u32], map: &GameMap ) {
                     y * tile_height,
                     tile_width,
                     tile_height,
-                    0xFFFFFFFF ),
+                    0x000000FF ),
                 Tile::Floor => (),
             }
         }
