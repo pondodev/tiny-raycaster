@@ -1,7 +1,11 @@
 #![allow(dead_code)]
+
+pub mod map;
+
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use map::*;
 
 const WINDOW_WIDTH: usize = 512;
 const WINDOW_HEIGHT: usize = 512;
@@ -22,6 +26,9 @@ fn main() {
             framebuffer[ x + y * WINDOW_WIDTH ] = encode_color(r, g, b, a)
         }
     }
+
+    let map = GameMap::new( "map.txt" );
+    draw_tiles(&mut framebuffer, &map);
 
     buffer_to_image( &framebuffer );
 }
@@ -60,5 +67,34 @@ fn buffer_to_image( framebuffer: &[u32] ) {
     for i in 0..framebuffer.len() {
         let (r, g, b, a) = decode_color( framebuffer[ i ] );
         file.write_all( format!( "{} {} {}\n", r, g, b ).as_bytes() ).unwrap();
+    }
+}
+
+fn draw_tiles( buffer: &mut [u32], map: &GameMap ) {
+    let tile_width = WINDOW_WIDTH / map.width;
+    let tile_height = WINDOW_HEIGHT / map.height;
+
+    for y in 0..map.height {
+        for x in 0..map.width {
+            match map.tiles[ x + y * map.width ] {
+                Tile::Wall  => draw_wall(
+                    buffer,
+                    x * tile_width,
+                    y * tile_height,
+                    tile_width,
+                    tile_height ),
+                Tile::Floor => (),
+            }
+        }
+    }
+}
+
+fn draw_wall( buffer: &mut [u32], x: usize, y: usize, w: usize, h: usize ) {
+    for i in 0..w {
+        for j in 0..h {
+            let buf_x = x + i;
+            let buf_y = y + j;
+            buffer[ buf_x + buf_y * WINDOW_WIDTH ] = 0xFFFFFFFF;
+        }
     }
 }
