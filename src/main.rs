@@ -16,6 +16,7 @@ fn main() {
     let mut framebuffer: [ u32; FRAMEBUFFER_SIZE ]
         = [ 0x00000000; FRAMEBUFFER_SIZE ];
 
+    // temp pretty colour background to show coordinate space
     for y in 0..WINDOW_HEIGHT {
         for x in 0..WINDOW_WIDTH {
             let r = (255 * x / WINDOW_WIDTH) as u8;
@@ -52,7 +53,6 @@ fn encode_color( r: u8, g: u8, b: u8, a: u8 ) -> u32 {
     col
 }
 
-#[allow(unused_variables)]
 fn buffer_to_image( framebuffer: &[u32] ) {
     let path = Path::new( "framebuffer.ppm" );
     let mut file = match File::create( path ) {
@@ -65,7 +65,7 @@ fn buffer_to_image( framebuffer: &[u32] ) {
     file.write_all( b"255\n" ).unwrap();
 
     for i in 0..framebuffer.len() {
-        let (r, g, b, a) = decode_color( framebuffer[ i ] );
+        let (r, g, b, _) = decode_color( framebuffer[ i ] );
         file.write_all( format!( "{} {} {}\n", r, g, b ).as_bytes() ).unwrap();
     }
 }

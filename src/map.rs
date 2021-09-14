@@ -20,6 +20,7 @@ impl GameMap {
         let file = File::open( path ).unwrap();
         let mut reader = BufReader::new( file );
 
+        // read in header information
         let mut w_str = String::new();
         let mut h_str = String::new();
         reader.read_line( &mut w_str ).unwrap();
@@ -29,6 +30,7 @@ impl GameMap {
         let width = w_str.parse::<usize>().unwrap();
         let height = h_str.parse::<usize>().unwrap();
 
+        // read in tiles
         let mut tiles = vec![ Tile::Floor; width * height ];
         let lines = reader.lines();
         let mut x = 0;
