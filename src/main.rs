@@ -33,8 +33,11 @@ fn main() {
     let map = GameMap::new( "map.txt" );
     draw_tiles(&mut framebuffer, &map);
 
-    let player = Player::new( 100, 250 );
-    draw_rect( &mut framebuffer, player.x, player.y, 5, 5, 0xFF00FFFF );
+    let tile_width = WINDOW_WIDTH / map.width;
+    let tile_height = WINDOW_HEIGHT / map.height;
+    let player = Player::new( 2.0, 7.0, 5 );
+    let (x, y) = player.get_world_pos( tile_width, tile_height );
+    draw_rect( &mut framebuffer, x, y, player.size, player.size, 0xFF00FFFF );
 
     buffer_to_image( &framebuffer );
 }
