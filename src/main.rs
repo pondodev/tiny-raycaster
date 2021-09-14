@@ -10,7 +10,7 @@ use map::*;
 use player::*;
 use std::f32::consts::PI;
 
-const WINDOW_WIDTH: usize = 512;
+const WINDOW_WIDTH: usize = 1024;
 const WINDOW_HEIGHT: usize = 512;
 const FRAMEBUFFER_SIZE: usize = WINDOW_WIDTH * WINDOW_HEIGHT;
 
@@ -22,15 +22,15 @@ fn main() {
     let map = GameMap::new( "map.txt" );
     draw_tiles(&mut framebuffer, &map);
 
-    let tile_width = WINDOW_WIDTH / map.width;
+    let tile_width = WINDOW_WIDTH / (map.width * 2);
     let tile_height = WINDOW_HEIGHT / map.height;
-    let player = Player::new( 2.0, 7.0, 5, 0.5 );
+    let player = Player::new( 2.0, 7.0, 5, 1.0 );
     let (x, y) = player.get_world_pos( tile_width, tile_height );
     draw_rect( &mut framebuffer, x, y, player.size, player.size, 0x5555FFFF );
 
-    // draw view cone
+    // draw view cone and 3d view
     let fov = PI / 3.0;
-    for i in 0..WINDOW_WIDTH {
+    for i in 0..WINDOW_WIDTH / 2 {
         let angle = player.angle - fov / 2.0 + fov * i as f32 / WINDOW_WIDTH as f32;
 
         let mut ray_dist = 0.0;
@@ -39,7 +39,11 @@ fn main() {
             let x = player.x + ray_dist * angle.cos();
             let y = player.y + ray_dist * angle.sin();
             if map.tiles[ x as usize + y as usize * map.width ] != Tile::Floor {
-                break
+                let col_height = WINDOW_HEIGHT as f32 / (ray_dist * (angle - player.angle).cos());
+                let x = WINDOW_WIDTH / 2 + i;
+                let y = (WINDOW_HEIGHT as f32 - col_height) as usize / 2;
+                draw_rect( &mut framebuffer, x, y, 1, col_height as usize, 0x000000FF );
+                break;
             }
 
             let x = x * tile_width as f32;
@@ -89,7 +93,7 @@ fn buffer_to_image( framebuffer: &[u32] ) {
 }
 
 fn draw_tiles( buffer: &mut [u32], map: &GameMap ) {
-    let tile_width = WINDOW_WIDTH / map.width;
+    let tile_width = WINDOW_WIDTH / (map.width * 2);
     let tile_height = WINDOW_HEIGHT / map.height;
 
     for y in 0..map.height {
