@@ -6,9 +6,11 @@ pub mod player;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use std::io::BufReader;
 use map::*;
 use player::*;
 use std::f32::consts::PI;
+use stb::image::{ stbi_load_from_reader, Channels };
 
 const WINDOW_WIDTH: usize = 1024;
 const WINDOW_HEIGHT: usize = 512;
@@ -21,6 +23,8 @@ fn main() {
 
     let map = GameMap::new( "map.txt" );
     draw_tiles(&mut framebuffer, &map);
+
+    let tex = load_image( "walltext.png" );
 
     let tile_width = WINDOW_WIDTH / (map.width * 2);
     let tile_height = WINDOW_HEIGHT / map.height;
@@ -41,7 +45,7 @@ fn main() {
             if map.tiles[ x as usize + y as usize * map.width ] != Tile::Floor {
                 let col_height = WINDOW_HEIGHT as f32 / (ray_dist * (angle - player.angle).cos());
                 let x = WINDOW_WIDTH / 2 + i;
-                let y = (WINDOW_HEIGHT as f32 - col_height) as usize / 2;
+                let y = (WINDOW_HEIGHT - col_height as usize) / 2;
                 draw_rect( &mut framebuffer, x, y, 1, col_height as usize, 0x000000FF );
                 break;
             }
@@ -120,4 +124,28 @@ fn draw_rect( buffer: &mut [u32], x: usize, y: usize, w: usize, h: usize, color:
             buffer[ buf_x + buf_y * WINDOW_WIDTH ] = color;
         }
     }
+}
+
+fn load_image( img_path: &str ) -> Vec<u32> {
+    let path = Path::new( img_path );
+    let file = File::open( path ).unwrap();
+    let mut reader = BufReader::new( file );
+    let (info, img) = match stbi_load_from_reader( &mut reader, Channels::RgbAlpha ) {
+        Some( (info, data) ) => (info, data),
+        None => panic!( "failed to read image" ),
+    };
+
+    let buf = img.into_vec();
+    let tex_size = info.width as usize * info.height as usize;
+    let mut tex = vec![ 0x00000000; tex_size ];
+    for i in (0..buf.len()).step_by( 4 ) {
+        let r = buf[ i ];
+        let g = buf[ i + 1 ];
+        let b = buf[ i + 2 ];
+        let a = buf[ i + 3 ];
+
+        tex[ i / 4 ] = encode_color( r, g, b, a );
+    }
+
+    tex
 }
